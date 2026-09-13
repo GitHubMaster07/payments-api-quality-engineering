@@ -2,6 +2,10 @@ spring:
   application:
     name: payments-api-quality-engineering
 
+  sql:
+    init:
+      mode: always
+
 management:
   endpoints:
     web:
