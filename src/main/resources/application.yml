@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: payments-api-quality-engineering
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
