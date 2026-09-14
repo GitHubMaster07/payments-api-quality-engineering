@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -69,18 +70,88 @@ public class PaymentRepository {
         ).stream().findFirst();
     }
 
-    private Payment mapPayment(ResultSet resultSet, int rowNum) throws SQLException {
+    public int updateStatus(
+            UUID paymentId,
+            PaymentStatus targetStatus,
+            long expectedVersion,
+            OffsetDateTime updatedAt
+    ) {
+        return jdbcTemplate.update(
+                """
+                UPDATE payments
+                SET status = ?,
+                    updated_at = ?,
+                    version = version + 1
+                WHERE payment_id = ?
+                  AND version = ?
+                """,
+                targetStatus.name(),
+                updatedAt,
+                paymentId,
+                expectedVersion
+        );
+    }
+
+    public void insertAudit(
+            UUID auditId,
+            UUID paymentId,
+            PaymentStatus fromStatus,
+            PaymentStatus toStatus,
+            OffsetDateTime createdAt
+    ) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO payment_audit (
+                    audit_id,
+                    payment_id,
+                    from_status,
+                    to_status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                auditId,
+                paymentId,
+                fromStatus.name(),
+                toStatus.name(),
+                createdAt
+        );
+    }
+
+    private Payment mapPayment(
+            ResultSet resultSet,
+            int rowNum
+    ) throws SQLException {
         return new Payment(
-                resultSet.getObject("payment_id", UUID.class),
-                resultSet.getObject("account_id", UUID.class),
+                resultSet.getObject(
+                        "payment_id",
+                        UUID.class
+                ),
+                resultSet.getObject(
+                        "account_id",
+                        UUID.class
+                ),
                 resultSet.getBigDecimal("amount"),
                 resultSet.getString("currency"),
-                PaymentStatus.valueOf(resultSet.getString("status")),
-                resultSet.getString("merchant_reference"),
-                resultSet.getObject("created_at", java.time.OffsetDateTime.class),
-                resultSet.getObject("updated_at", java.time.OffsetDateTime.class),
+                PaymentStatus.valueOf(
+                        resultSet.getString("status")
+                ),
+                resultSet.getString(
+                        "merchant_reference"
+                ),
+                resultSet.getObject(
+                        "created_at",
+                        OffsetDateTime.class
+                ),
+                resultSet.getObject(
+                        "updated_at",
+                        OffsetDateTime.class
+                ),
                 resultSet.getLong("version"),
-                resultSet.getObject("correlation_id", UUID.class)
+                resultSet.getObject(
+                        "correlation_id",
+                        UUID.class
+                )
         );
     }
 }
