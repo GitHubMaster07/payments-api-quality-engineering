@@ -1,5 +1,6 @@
 package com.sergevol.qe.payments.payment;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class PaymentController {
     @PostMapping
     public ResponseEntity<CreatePaymentResponse> createPayment(
             @RequestHeader("X-Correlation-ID") UUID correlationId,
-            @RequestBody CreatePaymentRequest request
+            @Valid @RequestBody CreatePaymentRequest request
     ) {
         Payment payment = paymentService.createPayment(
                 request.accountId(),
@@ -41,5 +42,17 @@ public class PaymentController {
         return paymentService.findById(paymentId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{paymentId}/cancel")
+    public ResponseEntity<Payment> cancelPayment(
+            @PathVariable UUID paymentId
+    ) {
+        Payment payment = paymentService.transitionStatus(
+                paymentId,
+                PaymentStatus.CANCELLED
+        );
+
+        return ResponseEntity.ok(payment);
     }
 }

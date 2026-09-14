@@ -21,3 +21,15 @@ CREATE TABLE payments (
         FOREIGN KEY (account_id)
         REFERENCES accounts(account_id)
 );
+
+CREATE TABLE payment_audit (
+    audit_id UUID PRIMARY KEY,
+    payment_id UUID NOT NULL,
+    from_status VARCHAR(32) NOT NULL,
+    to_status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT fk_payment_audit_payment
+        FOREIGN KEY (payment_id)
+        REFERENCES payments(payment_id)
+);
